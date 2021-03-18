@@ -1,0 +1,464 @@
+openapi: 3.0.1
+info:
+  title: ESN Application
+  description: API description for an emergency social network application.
+  version: 1.0.0
+servers:
+- url: http://localhost:2021/api
+tags:
+- name: users
+  description: All user routes
+- name: access_token
+  description: All access token routes
+- name: statuses
+  description: All statuses route
+- name: messages
+  description: All messages routes
+- name: conversations
+  description: All conversations routes
+
+paths:
+  /users:
+    get:
+      tags:
+      - users
+      summary: Returns a list of users.
+      responses:
+        200:
+          description: User directory retrieval successful
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    userId:
+                      $ref: '#/components/schemas/userId'
+                    username:
+                      $ref: '#/components/schemas/username'
+                    status:
+                      $ref: '#/components/schemas/status'
+                    isOnline:
+                      type: boolean
+                      example: false
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+         - cookieAuth: [] 
+    post:
+      tags:
+      - users
+      summary: Add a new user to the community.
+      requestBody:
+        description: The request body for adding a user
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: bob
+                password:
+                  type: string
+                  example: password1
+        required: true
+      responses:
+        200:
+          description: User creation successful
+        400:
+          description: Username/password is invalid or missing
+        406:
+          description: Username not allowed
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      
+  /access_token:
+    post:
+      tags:
+      - access_token
+      summary: Authorize a user.
+      requestBody:
+        description: The request body for adding a user
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: bob
+                password:
+                  type: string
+                  example: password1
+        required: true
+      responses:
+        200:
+          description: Access token creation successful
+          headers:
+            Set-Cookie:
+              description: Adds the jwt to the cookie
+              schema:
+                type: string
+        400:
+          description: Username/password is either invalid or missing
+        401:
+          description: Username/password is invalid or missing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 1
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+    delete:
+      tags:
+      - access_token
+      summary: Delete access token to log out user.
+      responses:
+        200:
+          description: Access token revoke successful
+        400:
+          description: Bad Request
+        403:
+          description: Forbidden
+      security:
+         - cookieAuth: []
+ 
+  /messages/public:
+    get:
+      tags:
+      - messages
+      summary: Returns a list of all public messages
+      responses:
+        200: 
+          description: Public message history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/basicMessage'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+        - cookieAuth: []
+    post:
+      tags:
+      - messages
+      summary: Add a new message to the public wall.
+      requestBody:
+        description: The request body for writing a new message
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Hello! How's your'e day?
+        required: true
+      responses:
+        200:
+          description: Message post successful
+        400:
+          description: Invalid or missing parameters
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+         - cookieAuth: []
+         
+  /messages/private:
+    post:
+      tags:
+      - messages
+      summary: Add a new private message.
+      requestBody:
+        description: The request body for writing a new message
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                recipientId: 
+                  type: number
+                  example: 124
+                message:
+                  type: string
+                  example: Hello! How's your day?
+        required: true
+      responses:
+        200:
+          description: Message post successful
+        400:
+          description: Invalid or missing parameters
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+         - cookieAuth: []
+    get:
+      tags:
+      - messages
+      summary: Return a list of private messages in the conversation between two users
+      description: Permissions - Must be the sender or recipient of the messages
+      parameters:
+        - in: query
+          name: userIds
+          schema:
+            type: string
+          examples:
+              Numbers:
+                value:  123,124
+              My channel:
+                value: me,123
+          description: A comma delimited list of two user IDs that belong to the two users in chat
+          required: true
+      responses:
+        200:
+          description: Private message history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/privateMessage'
+        400:
+          description: Invalid or missing parameters
+        403:
+          description: Permission denied
+        404:
+          description: Given users don't exist
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+           $ref: '#/components/responses/InternalSeverError'
+      security:
+         - cookieAuth: []
+         
+  /messages/private/{messageId}/read:
+    put:
+      tags:
+      - messages
+      summary: Mark a message as read
+      description: Set read attribute of a private message to true.<br>Permissions - Must be the recipient of the message
+      parameters:
+        - in: path
+          name: messageId
+          schema:
+            type: integer
+            example: 34230849
+          required: true
+          description: The private message ID.
+      responses:
+          200:
+            description: Message's unread status update successfully
+          400:
+            description: Invalid or missing parameters
+          403:
+            description: Permission denied
+          404:
+            description: Given private message ID cannot be found
+          401:
+            $ref: '#/components/responses/UnauthorizedError'
+          500:
+           $ref: '#/components/responses/InternalSeverError'
+      security:
+         - cookieAuth: []
+    
+  /users/{userId}/messages/private/unread:
+    get:
+      tags:
+      - messages
+      summary: Get a list of unread private messages for a user
+      description: Return a list of unread private messages that has the user as recipient.<br>Permission - Must be recipient of the messages
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: integer
+          examples:
+            Number:
+              value:  123
+            me:
+              value: me
+          required: true
+          description: The private message ID.
+      responses:
+          200:
+            description: Public message history retrieved successfully
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/basicMessage'
+          400:
+            description: Invalid or missing parameters
+          403:
+            description: Permission Denied
+          404:
+            description: Given private message ID cannot be found
+          401:
+            $ref: '#/components/responses/UnauthorizedError'
+          500:
+           $ref: '#/components/responses/InternalSeverError'
+      security:
+         - cookieAuth: []
+
+  /users/{userId}/conversations:
+    get:
+      tags:
+      - conversations
+      summary: Get all private chats that the user belongs to
+      description: Return a list of one-to-one private chats that the user is part of. <br>Permission -  conversation owners
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: integer
+          examples:
+              Number:
+                value:  123
+              me:
+                value: me
+          required: true
+          description: The user Id 
+      responses:
+        200:
+          description: A list of users that the user has conversation with
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    recipient:
+                      type: object
+                      properties:
+                        userId:
+                          type: integer
+                          example: 1
+                        username:
+                          type: string
+                          example: bob1
+                    hasUnread:
+                      description: whether the user has unread messages in the chat
+                      type: boolean
+                      example: false
+        400:
+           description: Invalid or missing parameters
+        403:
+          description: Permission denied. You don't have access to this person's conversation.
+        404:
+           description: Given user ID cannot be found
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+        - cookieAuth: []
+      
+  /statuses:
+    post:
+      tags:
+      - statuses
+      summary: Add a new status.
+      requestBody:
+        description: The request body for new status
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  $ref: '#/components/schemas/status'
+        required: true
+      responses:
+        200:
+          description: Status saved successfully
+        400:
+          description: Invalid or missing parameters
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+         - cookieAuth: []
+  
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: jwt
+  schemas:
+    status:
+      type: string
+      enum: [ok, emergency, help, undefined]
+      example: ok
+    userId:
+      type: integer
+      example: 1
+    username:
+      type: string
+      example: bob1
+    timestamp:
+      type: string
+      pattern: '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (2[0-3]|[01][0-9]):[0-5][0-9]$'
+      example: 2001-03-10 16:30
+    user:
+      type: object
+      properties:
+        userId:  
+          $ref: '#/components/schemas/userId'
+        name: 
+          $ref: '#/components/schemas/username'
+        status:
+          $ref: '#/components/schemas/status'
+    basicMessage:
+      type: object
+      properties:
+        id: 
+          type: number
+          example: 123
+        message:
+          type: string
+          example: Hello! My name is not bob
+        timestamp:
+          $ref: '#/components/schemas/timestamp'
+        sender:  
+          $ref: '#/components/schemas/user'
+    privateMessage:
+      type: object
+      properties:
+        id: 
+          type: number
+          example: 123
+        message:
+          type: string
+          example: Hello! My name is not bob
+        timestamp:
+          $ref: '#/components/schemas/timestamp'
+        unread:
+          type: boolean
+          example: true
+        sender:  
+          $ref: '#/components/schemas/user'
+  responses:
+    UnauthorizedError:
+      description: Access token is missing or invalid
+    InternalSeverError:
+      description: Internal server error
