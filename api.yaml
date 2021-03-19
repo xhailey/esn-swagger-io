@@ -208,22 +208,33 @@ paths:
           $ref: '#/components/responses/InternalSeverError'
       security:
          - cookieAuth: []
+  
+  /messages/private/{userId1}/{userId2}:
     get:
       tags:
       - messages
       summary: Return a list of private messages in the conversation between two users
       description: Permissions - Must be the sender or recipient of the messages
       parameters:
-        - in: query
-          name: userIds
+        - in: path
+          name: userId1
           schema:
             type: string
           examples:
               Numbers:
-                value:  123,124
+                value:  123
               My channel:
-                value: me,123
-          description: A comma delimited list of two user IDs that belong to the two users in chat
+                value: me
+          description: User ID of one of the user in the conversation
+          required: true
+        - in: path
+          name: userId2
+          schema:
+            type: string
+          examples:
+              Numbers:
+                value:  124
+          description: User ID of another user in the conversation
           required: true
       responses:
         200:
@@ -245,8 +256,8 @@ paths:
         500:
            $ref: '#/components/responses/InternalSeverError'
       security:
-         - cookieAuth: []
-         
+         - cookieAuth: []       
+  
   /messages/private/{messageId}/read:
     put:
       tags:
@@ -316,7 +327,7 @@ paths:
            $ref: '#/components/responses/InternalSeverError'
       security:
          - cookieAuth: []
-
+  
   /users/{userId}/conversations:
     get:
       tags:
