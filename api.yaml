@@ -245,12 +245,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/privateMessage'
-        400:
-          description: Invalid or missing parameters
         403:
           description: Permission denied
         404:
-          description: Given users don't exist
+          description: User IDs are missing in the path OR one of the users doesn't exist
         401:
           $ref: '#/components/responses/UnauthorizedError'
         500:
@@ -275,12 +273,10 @@ paths:
       responses:
           200:
             description: Message's unread status update successfully
-          400:
-            description: Invalid or missing parameters
           403:
-            description: Permission denied
+            description: Permission denied or Message ID doesn't exist
           404:
-            description: Given private message ID cannot be found
+            description: Message ID is missing in route
           401:
             $ref: '#/components/responses/UnauthorizedError'
           500:
@@ -314,13 +310,11 @@ paths:
                 schema:
                   type: array
                   items:
-                    $ref: '#/components/schemas/basicMessage'
-          400:
-            description: Invalid or missing parameters
+                    $ref: '#/components/schemas/privateMessage'
           403:
             description: Permission Denied
           404:
-            description: Given private message ID cannot be found
+            description: User ID is missing in the route OR the user cannot be found
           401:
             $ref: '#/components/responses/UnauthorizedError'
           500:
@@ -356,7 +350,7 @@ paths:
                 items:
                   type: object
                   properties:
-                    recipient:
+                    participant:
                       type: object
                       properties:
                         userId:
@@ -369,12 +363,10 @@ paths:
                       description: whether the user has unread messages in the chat
                       type: boolean
                       example: false
-        400:
-           description: Invalid or missing parameters
         403:
           description: Permission denied. You don't have access to this person's conversation.
         404:
-           description: Given user ID cannot be found
+           description: User ID is missing in the route or the user ID cannot be found
         401:
           $ref: '#/components/responses/UnauthorizedError'
         500:
@@ -427,10 +419,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/status'
-        400:
-          description: Invalid or missing parameters
         401:
           $ref: '#/components/responses/UnauthorizedError'
+        404:
+          description: User ID is missing in the route or the user ID cannot be found
         500:
           $ref: '#/components/responses/InternalSeverError'
   
@@ -488,7 +480,7 @@ components:
           example: Hello! My name is not bob
         timestamp:
           $ref: '#/components/schemas/timestamp'
-        unread:
+        read:
           type: boolean
           example: true
         sender:  
