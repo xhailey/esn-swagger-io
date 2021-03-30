@@ -510,10 +510,17 @@ paths:
                 items:
                   type: object
                   properties:
+                    announcementId:
+                      type: integer
+                      example: 20
+                    author:
+                      type: string
+                      example: James
+                      description: username of the announcement's author
+                    announcement:
+                      $ref: '#/components/schemas/announcement'
                     timestamp: 
                       $ref: '#/components/schemas/timestamp'
-                    status:
-                      $ref: '#/components/schemas/status'
         401:
           $ref: '#/components/responses/UnauthorizedError'
         500:
@@ -532,12 +539,11 @@ paths:
               type: object
               properties:
                 announcement:
-                  type: string
-                  example: Wild fire Updates
+                  $ref: '#/components/schemas/announcement'
         required: true
       responses:
         201:
-          description: Announcement posted successful
+          description: Announcement posted successfully
         400:
           description: Invalid or missing parameters
         401:
@@ -571,6 +577,9 @@ components:
       type: string
       pattern: '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (2[0-3]|[01][0-9]):[0-5][0-9]$'
       example: 2001-03-10 16:30
+    announcement:
+      type: string
+      example: Wild fire Updates
     user:
       type: object
       properties:
