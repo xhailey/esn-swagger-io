@@ -16,6 +16,8 @@ tags:
   description: All messages routes
 - name: conversations
   description: All conversations routes
+- name: announcements
+  description: All announcements routes
 
 paths:
   /users:
@@ -23,6 +25,17 @@ paths:
       tags:
       - users
       summary: Returns a list of users.
+      parameters:
+        - in: query
+          name: username
+          schema:
+            $ref: '#/components/schemas/username'
+          required: false
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/status'
+          required: false
       responses:
         200:
           description: User directory retrieval successful
@@ -67,7 +80,7 @@ paths:
                   example: password1
         required: true
       responses:
-        200:
+        201:
           description: User creation successful
         400:
           description: Username/password is invalid or missing
@@ -135,9 +148,14 @@ paths:
     get:
       tags:
       - messages
-      summary: Returns a list of all public messages
+      summary: Returns a list of public messages
+      parameters:
+        - $ref: '#/components/parameters/searchParam'
+        - $ref: '#/components/parameters/orderParam'
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/lengthParam'
       responses:
-        200: 
+        201: 
           description: Public message history retrieved successfully
           content:
             application/json:
@@ -167,7 +185,7 @@ paths:
                   example: Hello! How's your'e day?
         required: true
       responses:
-        200:
+        201:
           description: Message post successful
         400:
           description: Invalid or missing parameters
@@ -198,7 +216,7 @@ paths:
                   example: Hello! How's your day?
         required: true
       responses:
-        200:
+        201:
           description: Message post successful
         400:
           description: Invalid or missing parameters
@@ -236,6 +254,10 @@ paths:
                 value:  124
           description: User ID of another user in the conversation
           required: true
+        - $ref: '#/components/parameters/searchParam'
+        - $ref: '#/components/parameters/orderParam'
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/lengthParam'
       responses:
         200:
           description: Private message history retrieved successfully
@@ -421,10 +443,112 @@ paths:
                 $ref: '#/components/schemas/status'
         401:
           $ref: '#/components/responses/UnauthorizedError'
+        403:
+          description: Permission denied
         404:
           description: User ID is missing in the route or the user ID cannot be found
         500:
           $ref: '#/components/responses/InternalSeverError'
+      security:
+        - cookieAuth: []
+          
+  /users/{userId}/statuscrumb:
+    get:
+      tags:
+      - statuses
+      summary: Get a user's status history
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: integer
+          required: true
+        - $ref: '#/components/parameters/orderParam'
+        - $ref: '#/components/parameters/lengthParam'
+      responses:
+        200:
+          description: Status history is return successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    timestamp: 
+                      $ref: '#/components/schemas/timestamp'
+                    status:
+                      $ref: '#/components/schemas/status'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          description: Permission denied
+        404:
+          description: User ID is missing in the route or the user ID is not found
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+        - cookieAuth: []
+          
+  /announcements:
+    get:
+      tags:
+      - announcements
+      summary: Get a list of public announcements
+      parameters:
+        - $ref: '#/components/parameters/searchParam'
+        - $ref: '#/components/parameters/orderParam'
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/lengthParam'
+      responses:
+        200:
+          description: Announcements return successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    timestamp: 
+                      $ref: '#/components/schemas/timestamp'
+                    status:
+                      $ref: '#/components/schemas/status'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+           - cookieAuth: []
+    post:
+      tags:
+      - announcements
+      summary: Post a public announcement
+      requestBody:
+        description: The request body for writing a new message
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                announcement:
+                  type: string
+                  example: Wild fire Updates
+        required: true
+      responses:
+        201:
+          description: Announcement posted successful
+        400:
+          description: Invalid or missing parameters
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          description: Permission denied - Only coordinator is allowed to post an announcement
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+         - cookieAuth: []
+      
   
 components:
   securitySchemes:
@@ -452,14 +576,14 @@ components:
       properties:
         userId:  
           $ref: '#/components/schemas/userId'
-        name: 
+        username: 
           $ref: '#/components/schemas/username'
         status:
           $ref: '#/components/schemas/status'
     basicMessage:
       type: object
       properties:
-        id: 
+        messageId: 
           type: number
           example: 123
         message:
@@ -472,7 +596,7 @@ components:
     privateMessage:
       type: object
       properties:
-        id: 
+        messageId: 
           type: number
           example: 123
         message:
@@ -482,9 +606,49 @@ components:
           $ref: '#/components/schemas/timestamp'
         read:
           type: boolean
-          example: true
+          example: false
         sender:  
           $ref: '#/components/schemas/user'
+        recipient:
+          $ref: '#/components/schemas/user'
+  parameters:
+    searchParam:
+      in: query
+      description: Text that the search result should contain.
+      name: search
+      schema:
+        type: string
+        example: hello
+      required: false
+      
+    orderParam:
+      in: query
+      description: Order of the items in the result, ascend or descend.
+      name: order
+      schema:
+        type: string
+        enum: [asc, desc]
+        example: desc
+      required: false
+    
+    offsetParam:
+      in: query
+      description: Number of items to skip before returning the results.
+      name: offset
+      schema:
+        type: integer
+        example: 0
+      required: false
+    
+    lengthParam:
+      in: query
+      description: Maximum number of items to return.
+      name: length
+      schema:
+        type: integer
+        example: 10
+      required: false
+      
   responses:
     UnauthorizedError:
       description: Access token is missing or invalid
