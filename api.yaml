@@ -170,6 +170,8 @@ paths:
           description: Username not allowed
         500:
           $ref: '#/components/responses/InternalSeverError'
+      security:
+        - cookieAuth: []
           
   /access_token:
     post:
