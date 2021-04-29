@@ -18,6 +18,8 @@ tags:
   description: All conversations routes
 - name: announcements
   description: All announcements routes
+- name: locations
+  description: All locations routes
 
 paths:
   /users:
@@ -60,7 +62,7 @@ paths:
         500:
           $ref: '#/components/responses/InternalSeverError'
       security:
-         - cookieAuth: [] 
+         - cookieAuth: []
     post:
       tags:
       - users
@@ -88,7 +90,87 @@ paths:
           description: Username not allowed
         500:
           $ref: '#/components/responses/InternalSeverError'
-      
+
+  /users/{userId}:
+    get:
+      tags:
+      - users
+      summary: Returns a user who has the given user ID.
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            $ref: '#/components/schemas/userId'
+          required: true
+      responses:
+        200:
+          description: successfully return user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    $ref: '#/components/schemas/userId'
+                  username:
+                    $ref: '#/components/schemas/username'
+                  role:
+                    $ref: '#/components/schemas/role'
+                  active:
+                    type: boolean
+                    example: false
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        404:
+          description: User not found
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+         - cookieAuth: []
+    put:
+      tags:
+      - users
+      summary: Update a user's profile.
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            $ref: '#/components/schemas/userId'
+          required: true
+      requestBody:
+        description: The request body for adding a user
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: bob
+                password:
+                  type: string
+                  example: password1
+                active:
+                  type: boolean
+                  example: true
+                role:
+                  $ref: '#/components/schemas/role'
+                  
+        required: true
+      responses:
+        200:
+          description: User creation successful
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          description: Only admin is allowed to update user profile
+        404:
+          description: User not found
+        406:
+          description: Username not allowed
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+          
   /access_token:
     post:
       tags:
@@ -143,7 +225,7 @@ paths:
           description: Forbidden
       security:
          - cookieAuth: []
- 
+
   /messages/public:
     get:
       tags:
@@ -155,7 +237,7 @@ paths:
         - $ref: '#/components/parameters/offsetParam'
         - $ref: '#/components/parameters/lengthParam'
       responses:
-        201: 
+        200:
           description: Public message history retrieved successfully
           content:
             application/json:
@@ -195,7 +277,7 @@ paths:
           $ref: '#/components/responses/InternalSeverError'
       security:
          - cookieAuth: []
-         
+
   /messages/private:
     post:
       tags:
@@ -208,7 +290,7 @@ paths:
             schema:
               type: object
               properties:
-                recipientId: 
+                recipientId:
                   type: number
                   example: 124
                 message:
@@ -226,7 +308,7 @@ paths:
           $ref: '#/components/responses/InternalSeverError'
       security:
          - cookieAuth: []
-  
+
   /messages/private/{userId1}/{userId2}:
     get:
       tags:
@@ -276,8 +358,8 @@ paths:
         500:
            $ref: '#/components/responses/InternalSeverError'
       security:
-         - cookieAuth: []       
-  
+         - cookieAuth: []
+
   /messages/private/{messageId}/read:
     put:
       tags:
@@ -305,7 +387,7 @@ paths:
            $ref: '#/components/responses/InternalSeverError'
       security:
          - cookieAuth: []
-    
+
   /users/{userId}/messages/private/unread:
     get:
       tags:
@@ -343,7 +425,7 @@ paths:
            $ref: '#/components/responses/InternalSeverError'
       security:
          - cookieAuth: []
-  
+
   /users/{userId}/conversations:
     get:
       tags:
@@ -361,7 +443,7 @@ paths:
               me:
                 value: me
           required: true
-          description: The user Id 
+          description: The user Id
       responses:
         200:
           description: A list of users that the user has conversation with
@@ -395,7 +477,7 @@ paths:
           $ref: '#/components/responses/InternalSeverError'
       security:
         - cookieAuth: []
-      
+
   /statuses:
     post:
       tags:
@@ -422,7 +504,7 @@ paths:
           $ref: '#/components/responses/InternalSeverError'
       security:
          - cookieAuth: []
-         
+
   /users/{userId}/status:
     get:
       tags:
@@ -451,7 +533,7 @@ paths:
           $ref: '#/components/responses/InternalSeverError'
       security:
         - cookieAuth: []
-          
+
   /users/{userId}/statuscrumb:
     get:
       tags:
@@ -475,7 +557,7 @@ paths:
                 items:
                   type: object
                   properties:
-                    timestamp: 
+                    timestamp:
                       $ref: '#/components/schemas/timestamp'
                     status:
                       $ref: '#/components/schemas/status'
@@ -489,7 +571,7 @@ paths:
           $ref: '#/components/responses/InternalSeverError'
       security:
         - cookieAuth: []
-          
+
   /announcements:
     get:
       tags:
@@ -519,7 +601,7 @@ paths:
                       description: username of the announcement's author
                     announcement:
                       $ref: '#/components/schemas/announcement'
-                    timestamp: 
+                    timestamp:
                       $ref: '#/components/schemas/timestamp'
         401:
           $ref: '#/components/responses/UnauthorizedError'
@@ -554,8 +636,85 @@ paths:
           $ref: '#/components/responses/InternalSeverError'
       security:
          - cookieAuth: []
-      
-  
+
+  /users/{userId}/locations:
+    get:
+      tags:
+      - locations
+      summary: get a list of locations that the user saved
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          examples:
+            Number:
+              value: '123'
+            Me:
+              value: 'me'
+          required: true
+        - in: query
+          name: name
+          schema:
+            type: string
+          example: home
+          required: false
+      responses:
+        200:
+          description: Successfully returns locations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                    example: 1
+                  name:
+                    type: string
+                    example: home
+                  street:
+                    type: string
+                    example: 5333 Canon Street
+                  city:
+                    type: string
+                    example: Los Angeles
+                  state:
+                    type: string
+                    example: CA
+        403:
+          description: Permission denied - only the owner can get his/her locations
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+           - cookieAuth: []
+
+  /locations:
+    post:
+      tags:
+      - locations
+      summary: create a location
+      requestBody:
+        description: The request body for creating a new location
+        content:
+          application/json:
+            schema:
+               $ref: '#/components/schemas/location'
+        required: true
+      responses:
+        201:
+          description: Location posted successfully
+        400:
+          description: Invalid or missing parameters
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+         - cookieAuth: []
+
 components:
   securitySchemes:
     cookieAuth:
@@ -567,6 +726,10 @@ components:
       type: string
       enum: [ok, emergency, help, undefined]
       example: ok
+    role:
+      type: string
+      enum: [Citizen, Coordinator, Administrator]
+      example: Citizen
     userId:
       type: integer
       example: 1
@@ -583,16 +746,16 @@ components:
     user:
       type: object
       properties:
-        userId:  
+        userId:
           $ref: '#/components/schemas/userId'
-        username: 
+        username:
           $ref: '#/components/schemas/username'
         status:
           $ref: '#/components/schemas/status'
     basicMessage:
       type: object
       properties:
-        messageId: 
+        messageId:
           type: number
           example: 123
         message:
@@ -600,12 +763,27 @@ components:
           example: Hello! My name is not bob
         timestamp:
           $ref: '#/components/schemas/timestamp'
-        sender:  
+        sender:
           $ref: '#/components/schemas/user'
+    location:
+      type: object
+      properties:
+        name:
+          type: string
+          example: home
+        street:
+          type: string
+          example: 5333 Canon Street
+        city:
+          type: string
+          example: Los Angeles
+        state:
+          type: string
+          example: CA
     privateMessage:
       type: object
       properties:
-        messageId: 
+        messageId:
           type: number
           example: 123
         message:
@@ -616,7 +794,7 @@ components:
         read:
           type: boolean
           example: false
-        sender:  
+        sender:
           $ref: '#/components/schemas/user'
         recipient:
           $ref: '#/components/schemas/user'
@@ -629,7 +807,7 @@ components:
         type: string
         example: hello
       required: false
-      
+
     orderParam:
       in: query
       description: Order of the items in the result, ascend or descend.
@@ -639,7 +817,7 @@ components:
         enum: [asc, desc]
         example: desc
       required: false
-    
+
     offsetParam:
       in: query
       description: Number of items to skip before returning the results.
@@ -648,7 +826,7 @@ components:
         type: integer
         example: 0
       required: false
-    
+
     lengthParam:
       in: query
       description: Maximum number of items to return.
@@ -657,7 +835,7 @@ components:
         type: integer
         example: 10
       required: false
-      
+
   responses:
     UnauthorizedError:
       description: Access token is missing or invalid
