@@ -244,9 +244,15 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/basicMessage'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/basicMessage'
+                  total:
+                    type: number
+                    example: 100
         401:
           $ref: '#/components/responses/UnauthorizedError'
         500:
@@ -348,9 +354,15 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/privateMessage'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/privateMessage'
+                  total:
+                    type: number
+                    example: 50
         403:
           description: Permission denied
         404:
@@ -590,21 +602,27 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    announcementId:
-                      type: integer
-                      example: 20
-                    author:
-                      type: string
-                      example: James
-                      description: username of the announcement's author
-                    announcement:
-                      $ref: '#/components/schemas/announcement'
-                    timestamp:
-                      $ref: '#/components/schemas/timestamp'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        announcementId:
+                          type: integer
+                          example: 20
+                        author:
+                          type: string
+                          example: James
+                          description: username of the announcement's author
+                        announcement:
+                          $ref: '#/components/schemas/announcement'
+                        timestamp:
+                          $ref: '#/components/schemas/timestamp'
+                  total:
+                    type: number
+                    example: 10
         401:
           $ref: '#/components/responses/UnauthorizedError'
         500:
