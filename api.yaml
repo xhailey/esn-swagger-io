@@ -4,7 +4,7 @@ info:
   description: API description for an emergency social network application.
   version: 1.0.0
 servers:
-- url: http://localhost:2021/api
+- url: https://s21esn-sa5.herokuapp.com/
 tags:
 - name: users
   description: All user routes
