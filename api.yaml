@@ -20,6 +20,14 @@ tags:
   description: All announcements routes
 - name: locations
   description: All locations routes
+- name: tips
+  description: All Fire Tips routes
+- name: medical_support
+  description: All medical support routes
+- name: weather
+  description: All weather routes
+- name: incident_reports
+  description: All wildfire incident reports routes
 
 paths:
   /users:
@@ -735,6 +743,404 @@ paths:
       security:
          - cookieAuth: []
 
+  /tips:
+    get:
+      tags:
+      - tips
+      summary: Get a list of tips
+      responses:
+        200:
+          description: Get tips successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 20
+                    content:
+                      type: string
+                      example: 'my customized tip'
+                      description: an user's tip
+                    timestamp:
+                      $ref: '#/components/schemas/timestamp'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+           - cookieAuth: []
+    post:
+      tags:
+      - tips
+      summary: Post a tip
+      requestBody:
+        description: Create a customized tip
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  $ref: '#/components/schemas/tip'
+        required: true
+      responses:
+        200:
+          description: create a tip successfully
+        400:
+          description: Invalid or missing parameters
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          description: Permission denied - Only coordinator is allowed to post an announcement
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+         - cookieAuth: []
+
+    delete:
+      tags:
+      - tips
+      summary: Delete a tip
+      responses:
+        200:
+          description: create a tip successfully
+        400:
+          description: Invalid or missing parameters
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          description: Permission denied - Only coordinator is allowed to post an announcement
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+         - cookieAuth: []
+
+  /weather:
+    get:
+      tags:
+      - weather
+      summary: Get a list of weather conditions
+      responses:
+        200:
+          description: Weather conditions return successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 2
+                    temperature:
+                      type: integer
+                      example: 70
+                      description: measured in Fahrenheit
+                    fireIndex:
+                      type: integer
+                      example: 50
+                    windSpeed:
+                      type: integer
+                      example: 30
+                      description: measured in mph
+                    humidity:
+                      type: integer
+                      example: 45
+                      description: measured as %
+                    city:
+                      type: string
+                      example: Los Angeles
+                      description: measured as a city
+                    
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+           - cookieAuth: []
+    post:
+      tags:
+      - weather
+      summary: Post a new Weather Location
+      requestBody:
+        description: The request body for creating new weather location
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                city:
+                  type: string
+                  example: San Diego    
+        required: true
+      responses:
+        201:
+          description: Weather location posted successfully
+        400:
+          description: Invalid or missing parameters
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        409:
+          description: Duplicate location added
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+         - cookieAuth: []
+
+  /weather/{id}:
+    delete:
+      tags:
+      - weather
+      summary: Delete a weather location indicated by id
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        201:
+          description: Deleted a weather location successful
+        400:
+          description: Invalid or Missing parameters
+        403:
+          description: Permission denied
+        404:
+          description: The location to be deleted is not found.
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+        - cookieAuth: []
+
+  /medical_supports:
+    get:
+      tags:
+      - medical_support
+      summary: Get a list of medical support
+      parameters:
+        - $ref: '#/components/parameters/citySearchParam'
+        - $ref: '#/components/parameters/msSearchParam'
+        - $ref: '#/components/parameters/msMySearchParam'
+      responses:
+        200:
+          description: Medical support return successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    medicalSupportId:
+                      type: integer
+                      example: 20
+                    supporter:
+                      type: object
+                      properties:
+                        supporterId:  
+                          $ref: '#/components/schemas/userId'
+                        supportName: 
+                          type: string
+                          example: "Yanhui"
+                      description: name 
+                    medicalSupport:
+                      $ref: '#/components/schemas/medicalSupport'
+                    timestamp: 
+                      $ref: '#/components/schemas/timestamp'
+                    city:
+                      type: string
+                      example: Seattle
+                      description: city where the support is available
+                    state:
+                      type: string
+                      example: WA
+                      description: state where the support is available
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+           - cookieAuth: []
+
+    post:
+      tags:
+      - medical_support
+      summary: Post a medical support
+      requestBody:
+        description: The request body for writing a new message
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                medicalSupport:
+                  $ref: '#/components/schemas/medicalSupport'
+                city:
+                  type: string
+                  example: Seattle
+                  description: city where the support is available
+                state:
+                  type: string
+                  example: WA
+                  description: state where the support is available
+        required: true
+      responses:
+        201:
+          description: Medical support posted successfully
+        400:
+          description: Invalid or missing parameters
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+         - cookieAuth: []
+
+  /medical_supports/{userId}/{medicalSupportId}:  
+    delete:
+      tags:
+      - medical_support
+      summary: Delete one medical support post.
+      parameters:
+        - in: path
+          name: userId
+          description: asccocaited with the post (Number)
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: medicalSupportId
+          description: asccocaited with the post (Number)
+          schema:
+            type: integer
+          required: true
+      responses:
+        200:
+          description: Medical support deleted successfully
+        400:
+          description: Invalid or missing arameter
+        403:
+          description: Forbidden (cannot delete other people's posts)
+      security:
+         - cookieAuth: []
+      
+  /incident_reports:
+    get:
+      tags:
+      - incident_reports
+      summary: Returns a list of wildfire incident reports
+      responses:
+        200:
+          description: Wildfire incident report history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/incidentReport'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+        - cookieAuth: []
+  
+    post:
+      tags:
+      - incident_reports
+      summary: Add a new wildfire incident report to the wildfire incident report page.
+      requestBody:
+        description: The request body for writing a new wild fire incident report
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firename:
+                  type: string
+                  example: bush fire
+                appendinfo:
+                  type: string
+                  example: Hello! My name is not bob
+                firetype:
+                  type: string
+                  example: Forest fire
+                street: 
+                  type: string
+                  example: Benton Blvd
+                city:
+                  type: string
+                  example: Cary
+                state: 
+                  type: string
+                  example: NC
+                zip:
+                  type: number
+                  example: 1236
+                acres: 
+                  type: number
+                  example: 1236
+                percentage: 
+                  type: number
+                  example: 25
+                date:
+                  type: string
+                  example: 04/11/2020
+                imagename:
+                  type: string
+                  example: fire.jpg
+                image:
+                  type: string
+                  description: base64 string
+                  example: iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAAB1klEQVQ4jY2TTUhUURTHf+fy/H
+        required: true
+      responses:
+        201:
+          description: Wildfire incident report post successful
+        400:
+          description: Invalid or missing parameters
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+         - cookieAuth: []
+
+  /incident_reports/{reportId}/photo:
+    get:
+      tags:
+      - incident_reports
+      summary: Returns an image related to a report
+      parameters:
+        - in: path
+          name: reportId
+          description: Report ID that is related to a report
+          schema:
+            type: integer
+          required: true
+      responses:
+        200:
+          description: Photo retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+        404:
+          description: No such image
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalSeverError'
+      security:
+        - cookieAuth: []
+
+                  
 components:
   securitySchemes:
     cookieAuth:
@@ -742,6 +1148,9 @@ components:
       in: cookie
       name: jwt
   schemas:
+    tip:
+      type: string
+      example: 'my tip'
     status:
       type: string
       enum: [ok, emergency, help, undefined]
@@ -818,6 +1227,54 @@ components:
           $ref: '#/components/schemas/user'
         recipient:
           $ref: '#/components/schemas/user'
+    medicalSupport:
+      type: array
+      items: 
+        type: string
+        enum: [cpr, wound treatment, first aid kit, mask]
+      example: [cpr, wound treatment]
+      
+    incidentReport:
+      type: object
+      properties:
+        reportId:
+          $ref: '#/components/schemas/userId'
+        appendinfo:
+          type: string
+          example: Hello! My name is not bob
+        firename:
+          type: string
+          example: Bush fire
+        firetype:
+          type: string
+          example: Forest fire
+        street: 
+          type: string
+          example: Benton Blvd
+        city:
+          type: string
+          example: Cary
+        state: 
+          type: string
+          example: NC
+        zip:
+          type: number
+          example: 1236
+        acres: 
+          type: number
+          example: 1236
+        percentage: 
+          type: number
+          example: 25
+        date:
+          type: string
+          example: 04/11/2020
+        imagename: 
+          type: string
+          example: fire.jpg
+        reporter:
+          $ref: '#/components/schemas/username'
+      
   parameters:
     searchParam:
       in: query
@@ -854,6 +1311,33 @@ components:
       schema:
         type: integer
         example: 10
+      required: false
+      
+    citySearchParam:
+      in: query
+      description: Text that the search result should contain.
+      name: city
+      schema:
+        type: string
+        example: Seattle
+      required: false
+
+    msSearchParam:
+      in: query
+      description: Text that the search result should contain.
+      name: medicalSupport
+      schema:
+        type: string
+        example: cpr
+      required: false
+
+    msMySearchParam:
+      in: query
+      description: Text that the search result should contain.
+      name: my
+      schema:
+        type: string
+        example: my
       required: false
 
   responses:
